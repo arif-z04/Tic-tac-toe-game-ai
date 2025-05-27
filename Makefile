@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c99
+CFLAGS = -Wall -Wextra -std=c99 -O3
 TARGET = tic_tac_toe
 SOURCES = main.c game.c ai.c
 HEADERS = game.h ai.h
