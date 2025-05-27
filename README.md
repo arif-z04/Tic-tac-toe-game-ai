@@ -87,7 +87,7 @@ gcc -Wall -Wextra -std=c99 -O3 main.c game.c ai.c -o tic_tac_toe
 
 ## License
 
-MIT License (see LICENSE if provided)
+MIT License
 
 ---
 
