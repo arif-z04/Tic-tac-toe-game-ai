@@ -2,7 +2,22 @@
 #include <stdlib.h>
 #include "game.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
+
+void clear_screen() {
+#ifdef _WIN32
+    system("cls");
+#else
+    printf("\033[2J\033[H");
+#endif
+}
+
 void init_game(GameState *game) {
+    clear_screen();
     for (int i = 0; i < BOARD_SIZE; i++) {
         for (int j = 0; j < BOARD_SIZE; j++) {
             game->board[i][j] = ' ';
@@ -10,9 +25,33 @@ void init_game(GameState *game) {
     }
     game->move_count = 0;
     game->current_player = 'X';  // Human starts first
+    game->human_score = 0;
+    game->ai_score = 0;
+}
+
+// instruction menu
+void display_instructions() {
+    printf("\n=== TIC-TAC-TOE INSTRUCTIONS ===\n");
+    printf("1. You are X, AI is O\n");
+    printf("2. Enter row and column (0-2) separated by space\n");
+    printf("3. After 3 moves per player, oldest moves disappear\n");
+    printf("4. First to get 3 in a row wins the round\n");
+    printf("5. Game continues until you choose to quit\n");
+    printf("\nBoard coordinates:\n");
+    printf("(0,0) | (0,1) | (0,2)\n");
+    printf("------|-------|------\n");
+    printf("(1,0) | (1,1) | (1,2)\n");
+    printf("------|-------|------\n");
+    printf("(2,0) | (2,1) | (2,2)\n");
+    printf("\n");
 }
 
 void display_board(const GameState *game) {
+    clear_screen();
+    printf("\n=== TIC-TAC-TOE ===\n");
+    printf("Your Score: %d | AI Score: %d\n", game->human_score, game->ai_score);
+    printf("\nCurrent Player: %c\n", game->current_player);
+    
     printf("\n");
     for (int i = 0; i < BOARD_SIZE; i++) {
         printf(" %c | %c | %c ", game->board[i][0], game->board[i][1], game->board[i][2]);
@@ -30,11 +69,14 @@ int make_move(GameState *game, int row, int col) {
 
     game->board[row][col] = game->current_player;
     
-    // Record the move
-    if (game->move_count < MAX_MOVES) {
-        game->moves[game->move_count].row = row;
-        game->moves[game->move_count].col = col;
-        game->move_count++;
+    // Record the move (circular buffer)
+    game->moves[game->move_count % MAX_HISTORY].row = row;
+    game->moves[game->move_count % MAX_HISTORY].col = col;
+    game->move_count++;
+    
+    // Remove oldest move if each player has made 3 moves
+    if (game->move_count > MAX_HISTORY) {
+        remove_oldest_move(game);
     }
     
     // Switch player
@@ -51,7 +93,8 @@ char check_win(const GameState *game) {
             return game->board[i][0];
         }
     }
-    // Checking columns
+
+    // Check columns
     for (int j = 0; j < BOARD_SIZE; j++) {
         if (game->board[0][j] != ' ' && 
             game->board[0][j] == game->board[1][j] && 
@@ -59,14 +102,14 @@ char check_win(const GameState *game) {
             return game->board[0][j];
         }
     }
-    // checking Diagonals
 
+    // Check diagonals
     if (game->board[0][0] != ' ' && 
         game->board[0][0] == game->board[1][1] && 
         game->board[1][1] == game->board[2][2]) {
         return game->board[0][0];
     }
-    
+
     if (game->board[0][2] != ' ' && 
         game->board[0][2] == game->board[1][1] && 
         game->board[1][1] == game->board[2][0]) {
@@ -76,15 +119,10 @@ char check_win(const GameState *game) {
     return ' ';  // No winner yet
 }
 
-void slide_board(GameState *game) {
-    if (game->move_count >= MAX_MOVES) {
-        // Remove the oldest move
-        Move oldest = game->moves[0];
+void remove_oldest_move(GameState *game) {
+    if (game->move_count > MAX_HISTORY) {
+        int oldest_index = (game->move_count - MAX_HISTORY - 1) % MAX_HISTORY;
+        Move oldest = game->moves[oldest_index];
         game->board[oldest.row][oldest.col] = ' ';
-        
-        for (int i = 0; i < MAX_MOVES - 1; i++) {
-            game->moves[i] = game->moves[i + 1];
-        }
-        game->move_count--;
     }
 }
