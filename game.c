@@ -37,6 +37,8 @@ void display_instructions() {
     printf("3. After 3 moves per player, oldest moves disappear\n");
     printf("4. First to get 3 in a row wins the round\n");
     printf("5. Game continues until you choose to quit\n");
+    printf("6. Press 'Q' to quit the game at any time\n");
+
     printf("\nBoard coordinates:\n");
     printf("(0,0) | (0,1) | (0,2)\n");
     printf("------|-------|------\n");
@@ -48,7 +50,7 @@ void display_instructions() {
 
 void display_board(const GameState *game) {
     clear_screen();
-    printf("\n=== TIC-TAC-TOE ===\n");
+    printf("\n=== INFINITE TIC-TAC-TOE ===\n");
     printf("Your Score: %d | AI Score: %d\n", game->human_score, game->ai_score);
     printf("\nCurrent Player: %c\n", game->current_player);
     
@@ -62,23 +64,33 @@ void display_board(const GameState *game) {
     printf("\n");
 }
 
+
 int make_move(GameState *game, int row, int col) {
     if (row < 0 || row >= BOARD_SIZE || col < 0 || col >= BOARD_SIZE || game->board[row][col] != ' ') {
         return 0;  // Invalid move
     }
 
-    game->board[row][col] = game->current_player;
-    
-    // Record the move (circular buffer)
-    game->moves[game->move_count % MAX_HISTORY].row = row;
-    game->moves[game->move_count % MAX_HISTORY].col = col;
-    game->move_count++;
-    
-    // Remove oldest move if each player has made 3 moves
-    if (game->move_count > MAX_HISTORY) {
-        remove_oldest_move(game);
+    // Count current player's marks on the board
+    int player_moves = 0;
+    for (int i = 0; i < game->move_count; i++) {
+        if (game->moves[i].player == game->current_player) {
+            player_moves++;
+        }
     }
-    
+
+    // If player already has 3 marks, remove their oldest move
+    if (player_moves == 3) {
+        remove_oldest_move(game, game->current_player);
+    }
+
+    game->board[row][col] = game->current_player;
+
+    // Record the move at the end
+    game->moves[game->move_count].row = row;
+    game->moves[game->move_count].col = col;
+    game->moves[game->move_count].player = game->current_player;
+    game->move_count++;
+
     // Switch player
     game->current_player = (game->current_player == 'X') ? 'O' : 'X';
     return 1;
@@ -119,10 +131,30 @@ char check_win(const GameState *game) {
     return ' ';  // No winner yet
 }
 
-void remove_oldest_move(GameState *game) {
-    if (game->move_count > MAX_HISTORY) {
-        int oldest_index = (game->move_count - MAX_HISTORY - 1) % MAX_HISTORY;
+// void remove_oldest_move(GameState *game) {
+//     if (game->move_count > MAX_HISTORY) {
+//         int oldest_index = (game->move_count - MAX_HISTORY - 1) % MAX_HISTORY;
+//         Move oldest = game->moves[oldest_index];
+//         game->board[oldest.row][oldest.col] = ' ';
+//     }
+// }
+
+void remove_oldest_move(GameState *game, char player) {
+    int oldest_index = -1;
+    // Find the oldest move for the given player
+    for (int i = 0; i < game->move_count; i++) {
+        if (game->moves[i].player == player) {
+            oldest_index = i;
+            break;
+        }
+    }
+    if (oldest_index != -1) {
         Move oldest = game->moves[oldest_index];
         game->board[oldest.row][oldest.col] = ' ';
+        // Shift moves left
+        for (int i = oldest_index; i < game->move_count - 1; i++) {
+            game->moves[i] = game->moves[i + 1];
+        }
+        game->move_count--;
     }
 }

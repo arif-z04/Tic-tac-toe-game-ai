@@ -122,7 +122,7 @@ int minimax(GameState *game, int depth, int is_maximizing, int alpha, int beta) 
 
 Move find_best_move(GameState *game) {
     int best_val = INT_MIN;
-    Move best_move = {-1, -1};
+    Move best_move = {-1, -1, ' '};
     int alpha = INT_MIN;
     int beta = INT_MAX;
     
@@ -133,7 +133,7 @@ Move find_best_move(GameState *game) {
                 game->board[i][j] = 'O';
                 if (check_win(game) == 'O') {
                     game->board[i][j] = ' ';
-                    return (Move){i, j};
+                    return (Move){i, j, ' '};
                 }
                 game->board[i][j] = ' ';
             }
@@ -147,7 +147,7 @@ Move find_best_move(GameState *game) {
                 game->board[i][j] = 'X';
                 if (check_win(game) == 'X') {
                     game->board[i][j] = ' ';
-                    return (Move){i, j};
+                    return (Move){i, j, ' '};
                 }
                 game->board[i][j] = ' ';
             }
@@ -156,7 +156,7 @@ Move find_best_move(GameState *game) {
     
     // If center is available, take it
     if (game->board[1][1] == ' ') {
-        return (Move){1, 1};
+        return (Move){1, 1, ' '};
     }
     
     // Use minimax for other moves

@@ -49,7 +49,12 @@ int main() {
                 #endif
                 
                 Move ai_move = find_best_move(&game);
-                make_move(&game, ai_move.row, ai_move.col);
+
+                if(!make_move(&game, ai_move.row, ai_move.col)){
+                    printf("AI made invalid move! This shouldn't happen! \n");
+                    continue;
+                }
+                
                 printf("AI played at %d %d\n", ai_move.row, ai_move.col);
             }
             
